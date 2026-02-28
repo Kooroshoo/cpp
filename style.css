@@ -53,9 +53,22 @@ h2.section-title::before { content: "# "; opacity: 0.7; }
 .row-span-3 { grid-row: span 3; }
 .col-span-2 { grid-column: span 2; }
 
-/* Prevent horizontal overflow on smaller screens */
 @media (max-width: 768px) {
     .col-span-2 { grid-column: span 1; }
+}
+
+/* Anchor Links Jump Offset */
+h2.section-title, .cheat-card {
+    scroll-margin-top: 1.5rem; 
+}
+
+/* Optional target highlight animation */
+.highlight-target {
+    animation: targetFlash 1.2s ease-out;
+}
+@keyframes targetFlash {
+    0% { box-shadow: 0 0 0 3px var(--theme-green); border-radius: 8px;}
+    100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 /* Cards */
@@ -96,8 +109,8 @@ h2.section-title::before { content: "# "; opacity: 0.7; }
 .cheat-card-body > * { padding: 0 1.2rem; }
 .code-wrapper, .table-wrapper { padding: 0 !important; }
 
-/* Middle Separator Paragraphs */
-.cheat-card-body p {
+/* Direct Child selector (>) so lists containing <p> tags aren't affected */
+.cheat-card-body > p {
     background-color: #f1f5f9; 
     margin: 0;
     padding: 0.8rem 1.2rem;
@@ -107,8 +120,7 @@ h2.section-title::before { content: "# "; opacity: 0.7; }
     border-bottom: 1px solid var(--border-color);
 }
 
-/* Bottom Footer Paragraphs */
-.cheat-card-body p:last-child {
+.cheat-card-body > p:last-child {
     margin-top: auto; 
     background-color: #f8f9fa; 
     border-top: 1px solid var(--border-color);
@@ -117,6 +129,36 @@ h2.section-title::before { content: "# "; opacity: 0.7; }
 }
 
 .cheat-card-body hr { margin: 0; border: none; border-top: 1px solid var(--border-color); }
+
+/* Proper List Padding */
+.cheat-card-body ul, 
+.cheat-card-body ol {
+    padding: 0 1.2rem 0 2.5rem; 
+    margin: 0.8rem 0;
+}
+
+.cheat-card-body li {
+    margin-bottom: 0.4rem;
+    line-height: 1.5;
+}
+
+/* FIX: Removes styling from loose list paragraphs */
+.cheat-card-body ul p,
+.cheat-card-body ol p {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Links */
+.cheat-card-body a {
+    color: var(--theme-green);
+    text-decoration: none;
+}
+.cheat-card-body a:hover {
+    text-decoration: underline;
+}
 
 /* Scrollable Wrappers */
 .code-wrapper, .table-wrapper {
@@ -169,7 +211,6 @@ code[class*="language-"], pre[class*="language-"] {
     box-sizing: border-box; 
 }
 
-/* Darker Syntax Colors */
 .token.keyword { color: #c05005 !important; } 
 .token.string { color: #1e7030 !important; } 
 .token.comment { color: #545d66 !important; font-style: normal !important;} 
@@ -217,9 +258,7 @@ code[class*="language-"], pre[class*="language-"] {
 }
 
 /* --- Grid Column Overrides --- */
-.grid-container.cols-2 {
-    grid-template-columns: repeat(2, 1fr);
-}
+.grid-container.cols-2 { grid-template-columns: repeat(2, 1fr); }
 
 /* --- List/Card Content Columns --- */
 .cols-2 { column-count: 2; column-gap: 1.5rem; }
@@ -227,7 +266,6 @@ code[class*="language-"], pre[class*="language-"] {
 .cols-4 { column-count: 4; column-gap: 1.5rem; }
 .cols-5 { column-count: 5; column-gap: 1.5rem; }
 
-/* Prevents list items from breaking abruptly across columns */
 ul[class*="cols-"] li, 
 ol[class*="cols-"] li {
     break-inside: avoid;
@@ -235,16 +273,16 @@ ol[class*="cols-"] li {
 }
 
 /* Custom list styles defined in markdown */
-.marker-none {
+ul.marker-none, ol.marker-none {
     list-style-type: none;
-    padding-left: 0;
+    padding-left: 0.5rem; /* Better padding for bulletless lists */
 }
 
-.marker-none li {
-    margin-bottom: 0.25rem;
+ul.marker-none li, ol.marker-none li {
+    margin-bottom: 0.6rem; /* Gives breathing room to the columns */
 }
 
-/* --- Responsive Fallbacks --- */
+/* Responsive Fallbacks */
 @media (max-width: 1024px) {
     .grid-container.cols-2 { grid-template-columns: 1fr; }
     .cols-3, .cols-4, .cols-5 { column-count: 2; }

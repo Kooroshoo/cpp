@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Helper function to turn "C++ Functions" into "c-functions"
+    const generateId = (text) => {
+        return text.toLowerCase().replace(/[^\w]+/g, '-').replace(/(^-|-$)/g, '');
+    };
+
     fetch('cpp.md')
         .then(response => {
             if (!response.ok) throw new Error("Markdown file not found");
@@ -27,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 markdownContent = text.replace(frontmatterRegex, '').trim();
             }
 
-            // Convert superscripts: ^31^ -> <sup>31</sup>
             markdownContent = markdownContent.replace(/\^([^\^]+)\^/g, '<sup>$1</sup>');
 
             const rawHtml = marked.parse(markdownContent);
@@ -39,14 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
             let currentCardBody = null;
 
             Array.from(tempDiv.children).forEach(node => {
-                // Robust regex to match single or multiple markdown classes like {.class1 .class2}
                 const classRegex = /\{\s*((?:\.[a-zA-Z0-9_-]+\s*)+)\}/;
 
                 if (node.tagName === 'H2') {
                     let headerText = node.textContent;
                     let gridClasses = ['grid-container'];
 
-                    // Check for classes on H2 to apply to the Grid Container
                     const classMatch = headerText.match(classRegex);
                     if (classMatch) {
                         const classes = classMatch[1].split('.').map(c => c.trim()).filter(Boolean);
@@ -57,6 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const sectionTitle = document.createElement('h2');
                     sectionTitle.className = 'section-title';
                     sectionTitle.textContent = headerText;
+                    
+                    // Manually assign ID to allow anchor links to jump here
+                    sectionTitle.id = generateId(headerText); 
+                    
                     mainContainer.appendChild(sectionTitle);
                     
                     currentGrid = document.createElement('div');
@@ -74,13 +80,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const currentCard = document.createElement('div');
                     currentCard.className = 'cheat-card';
 
-                    // Check for classes on H3 to apply to the Card
                     const classMatch = headerText.match(classRegex);
                     if (classMatch) {
                         const classes = classMatch[1].split('.').map(c => c.trim()).filter(Boolean);
                         currentCard.classList.add(...classes);
                         headerText = headerText.replace(classMatch[0], '').trim();
                     }
+
+                    // Manually assign ID to the card
+                    currentCard.id = generateId(headerText); 
 
                     const cardHeader = document.createElement('div');
                     cardHeader.className = 'cheat-card-header';
@@ -95,17 +103,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 } 
                 else {
                     if (currentCardBody) {
-                        // Check for classes on standard blocks (like UL/OL lists or paragraphs)
-                        const textContent = node.textContent || '';
-                        const classMatch = textContent.match(classRegex);
-                        if (classMatch) {
+                        const blockAttrRegex = /^\{\s*((?:\.[a-zA-Z0-9_-]+\s*)+)\}$/;
+                        if (node.tagName === 'P' && blockAttrRegex.test(node.textContent.trim())) {
+                            const classMatch = node.textContent.trim().match(blockAttrRegex);
                             const classes = classMatch[1].split('.').map(c => c.trim()).filter(Boolean);
+                            if (currentCardBody.lastElementChild) {
+                                currentCardBody.lastElementChild.classList.add(...classes);
+                            }
+                            return; 
+                        }
+
+                        const inlineMatch = node.innerHTML.match(classRegex);
+                        if (inlineMatch) {
+                            const classes = inlineMatch[1].split('.').map(c => c.trim()).filter(Boolean);
                             node.classList.add(...classes);
-                            
-                            // Remove the class definition string from the HTML block so it doesn't render
-                            node.innerHTML = node.innerHTML.replace(classMatch[0], '').trim();
-                            
-                            // Prevent appending an empty block if the class definition was the only thing in it
+                            node.innerHTML = node.innerHTML.replace(inlineMatch[0], '').trim();
                             if (node.innerHTML === '') return; 
                         }
 
@@ -146,6 +158,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             Prism.highlightAll();
+
+            // Intercept anchor clicks to provide smooth scrolling to the generated IDs
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                        
+                        // Add a quick visual flash so the user knows where they landed
+                        targetElement.classList.add('highlight-target');
+                        setTimeout(() => targetElement.classList.remove('highlight-target'), 1200);
+                    }
+                });
+            });
+
         })
         .catch(console.error);
 });
