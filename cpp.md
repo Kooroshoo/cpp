@@ -1,7 +1,7 @@
 ---
 title: C++
 date: 2021-06-01 11:51:44
-background: bg-[#6d94c7]
+background: bg-[#00599C]
 tags:
 categories:
   - Programming
