@@ -39,7 +39,6 @@ h2.section-title {
 }
 h2.section-title::before { content: "# "; opacity: 0.7; }
 
-/* FIX: Fluid grid implementation using auto-fit and dense packing */
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
@@ -49,7 +48,7 @@ h2.section-title::before { content: "# "; opacity: 0.7; }
     align-items: start;
 }
 
-/* FIX: Grid Span Utilities */
+/* Grid Span Utilities */
 .row-span-2 { grid-row: span 2; }
 .row-span-3 { grid-row: span 3; }
 .col-span-2 { grid-column: span 2; }
@@ -163,7 +162,6 @@ code[class*="language-"], pre[class*="language-"] {
     text-shadow: none !important;
 }
 
-/* FIX APPLIED: Includes padding in 100% width so it doesn't overflow unnecessarily */
 .cheat-card-body pre[class*="language-"] code {
     display: inline-block;
     min-width: 100%;
@@ -184,7 +182,6 @@ code[class*="language-"], pre[class*="language-"] {
 .table-wrapper {
     padding-bottom: 0.5rem !important; 
 }
-/* FIX APPLIED: Removed hardcoded width to stop permanent horizontal scrolling */
 .cheat-card-body table {
     width: 100%;
     border-collapse: collapse;
@@ -203,7 +200,6 @@ code[class*="language-"], pre[class*="language-"] {
 .cheat-card-body th:first-child, .cheat-card-body td:first-child { padding-left: 1.2rem; }
 .cheat-card-body th:last-child, .cheat-card-body td:last-child { padding-right: 1.2rem; }
 
-/* FIX APPLIED: Separated td and code into two rules so the table cell doesn't lose its padding */
 .cheat-card-body td:first-child {
     color: var(--theme-green);
 }
@@ -218,4 +214,42 @@ code[class*="language-"], pre[class*="language-"] {
 .cheat-card-body td:last-child {
     text-align: right;
     color: #475569;
+}
+
+/* --- Grid Column Overrides --- */
+.grid-container.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* --- List/Card Content Columns --- */
+.cols-2 { column-count: 2; column-gap: 1.5rem; }
+.cols-3 { column-count: 3; column-gap: 1.5rem; }
+.cols-4 { column-count: 4; column-gap: 1.5rem; }
+.cols-5 { column-count: 5; column-gap: 1.5rem; }
+
+/* Prevents list items from breaking abruptly across columns */
+ul[class*="cols-"] li, 
+ol[class*="cols-"] li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+/* Custom list styles defined in markdown */
+.marker-none {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.marker-none li {
+    margin-bottom: 0.25rem;
+}
+
+/* --- Responsive Fallbacks --- */
+@media (max-width: 1024px) {
+    .grid-container.cols-2 { grid-template-columns: 1fr; }
+    .cols-3, .cols-4, .cols-5 { column-count: 2; }
+}
+
+@media (max-width: 600px) {
+    .cols-2, .cols-3, .cols-4, .cols-5 { column-count: 1; }
 }

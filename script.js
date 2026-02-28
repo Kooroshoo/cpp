@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 markdownContent = text.replace(frontmatterRegex, '').trim();
             }
 
-            // FIX: Removed the line that was deleting custom classes
             // Convert superscripts: ^31^ -> <sup>31</sup>
             markdownContent = markdownContent.replace(/\^([^\^]+)\^/g, '<sup>$1</sup>');
 
@@ -40,14 +39,28 @@ document.addEventListener('DOMContentLoaded', () => {
             let currentCardBody = null;
 
             Array.from(tempDiv.children).forEach(node => {
+                // Robust regex to match single or multiple markdown classes like {.class1 .class2}
+                const classRegex = /\{\s*((?:\.[a-zA-Z0-9_-]+\s*)+)\}/;
+
                 if (node.tagName === 'H2') {
+                    let headerText = node.textContent;
+                    let gridClasses = ['grid-container'];
+
+                    // Check for classes on H2 to apply to the Grid Container
+                    const classMatch = headerText.match(classRegex);
+                    if (classMatch) {
+                        const classes = classMatch[1].split('.').map(c => c.trim()).filter(Boolean);
+                        gridClasses.push(...classes);
+                        headerText = headerText.replace(classMatch[0], '').trim();
+                    }
+
                     const sectionTitle = document.createElement('h2');
                     sectionTitle.className = 'section-title';
-                    sectionTitle.textContent = node.textContent;
+                    sectionTitle.textContent = headerText;
                     mainContainer.appendChild(sectionTitle);
                     
                     currentGrid = document.createElement('div');
-                    currentGrid.className = 'grid-container';
+                    currentGrid.className = gridClasses.join(' ');
                     mainContainer.appendChild(currentGrid);
                 } 
                 else if (node.tagName === 'H3') {
@@ -58,17 +71,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     let headerText = node.textContent;
-                    let cardClasses = ['cheat-card'];
-
-                    // FIX: Extract custom markdown classes like {.row-span-2}
-                    const classMatch = headerText.match(/\{\.([\w-]+)\}/);
-                    if (classMatch) {
-                        cardClasses.push(classMatch[1]); // Adds the extracted class
-                        headerText = headerText.replace(classMatch[0], '').trim(); // Cleans it from the title
-                    }
-
                     const currentCard = document.createElement('div');
-                    currentCard.className = cardClasses.join(' '); // Applies all classes to the div
+                    currentCard.className = 'cheat-card';
+
+                    // Check for classes on H3 to apply to the Card
+                    const classMatch = headerText.match(classRegex);
+                    if (classMatch) {
+                        const classes = classMatch[1].split('.').map(c => c.trim()).filter(Boolean);
+                        currentCard.classList.add(...classes);
+                        headerText = headerText.replace(classMatch[0], '').trim();
+                    }
 
                     const cardHeader = document.createElement('div');
                     cardHeader.className = 'cheat-card-header';
@@ -83,6 +95,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 } 
                 else {
                     if (currentCardBody) {
+                        // Check for classes on standard blocks (like UL/OL lists or paragraphs)
+                        const textContent = node.textContent || '';
+                        const classMatch = textContent.match(classRegex);
+                        if (classMatch) {
+                            const classes = classMatch[1].split('.').map(c => c.trim()).filter(Boolean);
+                            node.classList.add(...classes);
+                            
+                            // Remove the class definition string from the HTML block so it doesn't render
+                            node.innerHTML = node.innerHTML.replace(classMatch[0], '').trim();
+                            
+                            // Prevent appending an empty block if the class definition was the only thing in it
+                            if (node.innerHTML === '') return; 
+                        }
+
                         if (node.tagName === 'TABLE') {
                             const tableWrapper = document.createElement('div');
                             tableWrapper.className = 'table-wrapper';
