@@ -27,8 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 markdownContent = text.replace(frontmatterRegex, '').trim();
             }
 
-            // Cleanup custom classes
-            markdownContent = markdownContent.replace(/\{[\.\w\s-]+\}/g, '');
+            // FIX: Removed the line that was deleting custom classes
             // Convert superscripts: ^31^ -> <sup>31</sup>
             markdownContent = markdownContent.replace(/\^([^\^]+)\^/g, '<sup>$1</sup>');
 
@@ -58,12 +57,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         mainContainer.appendChild(currentGrid);
                     }
 
+                    let headerText = node.textContent;
+                    let cardClasses = ['cheat-card'];
+
+                    // FIX: Extract custom markdown classes like {.row-span-2}
+                    const classMatch = headerText.match(/\{\.([\w-]+)\}/);
+                    if (classMatch) {
+                        cardClasses.push(classMatch[1]); // Adds the extracted class
+                        headerText = headerText.replace(classMatch[0], '').trim(); // Cleans it from the title
+                    }
+
                     const currentCard = document.createElement('div');
-                    currentCard.className = 'cheat-card';
+                    currentCard.className = cardClasses.join(' '); // Applies all classes to the div
 
                     const cardHeader = document.createElement('div');
                     cardHeader.className = 'cheat-card-header';
-                    cardHeader.textContent = node.textContent;
+                    cardHeader.textContent = headerText;
                     currentCard.appendChild(cardHeader);
 
                     currentCardBody = document.createElement('div');

@@ -39,16 +39,25 @@ h2.section-title {
 }
 h2.section-title::before { content: "# "; opacity: 0.7; }
 
+/* FIX: Fluid grid implementation using auto-fit and dense packing */
 .grid-container {
     display: grid;
-    grid-template-columns: 1fr;
-    /* FIX: 2.5rem vertical gap for more space between top/down rows, 1.5rem horizontal gap */
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    grid-auto-flow: dense;
     gap: 2.5rem 1.5rem; 
     margin-bottom: 2.5rem; 
-    align-items: stretch;
+    align-items: start;
 }
-@media (min-width: 768px) { .grid-container { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1024px) { .grid-container { grid-template-columns: repeat(3, 1fr); } }
+
+/* FIX: Grid Span Utilities */
+.row-span-2 { grid-row: span 2; }
+.row-span-3 { grid-row: span 3; }
+.col-span-2 { grid-column: span 2; }
+
+/* Prevent horizontal overflow on smaller screens */
+@media (max-width: 768px) {
+    .col-span-2 { grid-column: span 1; }
+}
 
 /* Cards */
 .cheat-card {
@@ -88,7 +97,7 @@ h2.section-title::before { content: "# "; opacity: 0.7; }
 .cheat-card-body > * { padding: 0 1.2rem; }
 .code-wrapper, .table-wrapper { padding: 0 !important; }
 
-/* Middle Separator Paragraphs (e.g., "Compiling and running") */
+/* Middle Separator Paragraphs */
 .cheat-card-body p {
     background-color: #f1f5f9; 
     margin: 0;
@@ -99,13 +108,13 @@ h2.section-title::before { content: "# "; opacity: 0.7; }
     border-bottom: 1px solid var(--border-color);
 }
 
-/* FIX: Bottom Footer Paragraphs (e.g., "See: Conditionals") */
+/* Bottom Footer Paragraphs */
 .cheat-card-body p:last-child {
-    margin-top: auto; /* This pins it to the bottom of the card */
-    background-color: #f8f9fa; /* Lighter grey to distinguish it */
+    margin-top: auto; 
+    background-color: #f8f9fa; 
     border-top: 1px solid var(--border-color);
     border-bottom: none;
-    border-radius: 0 0 8px 8px; /* Matches the card's rounded corners */
+    border-radius: 0 0 8px 8px; 
 }
 
 .cheat-card-body hr { margin: 0; border: none; border-top: 1px solid var(--border-color); }
@@ -154,12 +163,12 @@ code[class*="language-"], pre[class*="language-"] {
     text-shadow: none !important;
 }
 
-/* FIX: Right padding on code elements so they don't touch border when scrolled */
+/* FIX APPLIED: Includes padding in 100% width so it doesn't overflow unnecessarily */
 .cheat-card-body pre[class*="language-"] code {
     display: inline-block;
     min-width: 100%;
     padding-right: 1.2rem; 
-    box-sizing: border-box; /* FIX APPLIED: Includes padding in 100% width so it doesn't overflow unnecessarily */
+    box-sizing: border-box; 
 }
 
 /* Darker Syntax Colors */
@@ -173,15 +182,15 @@ code[class*="language-"], pre[class*="language-"] {
 
 /* Tables */
 .table-wrapper {
-    padding-bottom: 0.5rem !important; /* Space for the scrollbar */
+    padding-bottom: 0.5rem !important; 
 }
+/* FIX APPLIED: Removed hardcoded width to stop permanent horizontal scrolling */
 .cheat-card-body table {
     width: 100%;
     border-collapse: collapse;
     margin: 0;
     font-size: 0.95rem;
-    /* min-width: 450px; FIX APPLIED: Removed hardcoded width to stop permanent horizontal scrolling */
-    white-space: nowrap; /* Forces scrolling instead of squishing text */
+    white-space: nowrap; 
 }
 .cheat-card-body th, .cheat-card-body td {
     padding: 0.8rem 1.2rem;
@@ -191,7 +200,6 @@ code[class*="language-"], pre[class*="language-"] {
 .cheat-card-body th { font-weight: 600; color: #334155; }
 .cheat-card-body tr:last-child td { border-bottom: none; }
 
-/* FIX: Inner padding to prevent text from touching walls on horizontal scroll */
 .cheat-card-body th:first-child, .cheat-card-body td:first-child { padding-left: 1.2rem; }
 .cheat-card-body th:last-child, .cheat-card-body td:last-child { padding-right: 1.2rem; }
 
