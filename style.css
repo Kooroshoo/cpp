@@ -159,6 +159,7 @@ code[class*="language-"], pre[class*="language-"] {
     display: inline-block;
     min-width: 100%;
     padding-right: 1.2rem; 
+    box-sizing: border-box; /* FIX APPLIED: Includes padding in 100% width so it doesn't overflow unnecessarily */
 }
 
 /* Darker Syntax Colors */
@@ -179,7 +180,7 @@ code[class*="language-"], pre[class*="language-"] {
     border-collapse: collapse;
     margin: 0;
     font-size: 0.95rem;
-    min-width: 450px; 
+    /* min-width: 450px; FIX APPLIED: Removed hardcoded width to stop permanent horizontal scrolling */
     white-space: nowrap; /* Forces scrolling instead of squishing text */
 }
 .cheat-card-body th, .cheat-card-body td {
@@ -194,12 +195,17 @@ code[class*="language-"], pre[class*="language-"] {
 .cheat-card-body th:first-child, .cheat-card-body td:first-child { padding-left: 1.2rem; }
 .cheat-card-body th:last-child, .cheat-card-body td:last-child { padding-right: 1.2rem; }
 
-.cheat-card-body td:first-child code,
+/* FIX APPLIED: Separated td and code into two rules so the table cell doesn't lose its padding */
 .cheat-card-body td:first-child {
     color: var(--theme-green);
+}
+
+.cheat-card-body td:first-child code {
     background: transparent;
     padding: 0;
+    color: inherit;
 }
+
 .cheat-card-body th:last-child, 
 .cheat-card-body td:last-child {
     text-align: right;
