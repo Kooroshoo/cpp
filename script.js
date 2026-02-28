@@ -1,181 +1,120 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Helper function to turn "C++ Functions" into "c-functions"
-    const generateId = (text) => {
-        return text.toLowerCase().replace(/[^\w]+/g, '-').replace(/(^-|-$)/g, '');
+    const mainContainer = document.getElementById('main-container');
+    const toId = text => text.toLowerCase().replace(/[^\w]+/g, '-').replace(/(^-|-$)/g, '');
+
+    // Helper: Extracts markdown classes (e.g., {.cols-2}) and returns clean text + class array
+    const extractClasses = (str) => {
+        const match = str.match(/\{\s*((?:\.[a-zA-Z0-9_-]+\s*)+)\}/);
+        return match 
+            ? { clean: str.replace(match[0], '').trim(), classes: match[1].split('.').map(c => c.trim()).filter(Boolean), matched: match[0] } 
+            : { clean: str, classes: [], matched: null };
     };
 
     fetch('cpp.md')
-        .then(response => {
-            if (!response.ok) throw new Error("Markdown file not found");
-            return response.text();
-        })
+        .then(res => res.ok ? res.text() : Promise.reject("File not found"))
         .then(text => {
-            const frontmatterRegex = /^---[\r\n]+([\s\S]*?)[\r\n]+---/;
-            const match = text.match(frontmatterRegex);
-            let markdownContent = text;
+            // 1. Parse Frontmatter
+            const match = text.match(/^---[\r\n]+([\s\S]*?)[\r\n]+---/);
+            let mdContent = text;
             
             if (match) {
                 const yaml = match[1];
-                const titleMatch = yaml.match(/title:\s*(.*)/);
-                const introMatch = yaml.match(/intro:\s*\|\r?\n\s*(.*)/);
-                const bgMatch = yaml.match(/background:\s*(.*)/);
+                const getVal = regex => (yaml.match(regex) || [])[1]?.trim();
                 
-                if(titleMatch) document.getElementById('page-title').innerText = titleMatch[1];
-                if(introMatch) document.getElementById('page-intro').innerText = introMatch[1].trim();
+                document.getElementById('page-title').innerText = getVal(/title:\s*(.*)/) || 'Cheat Sheet';
+                document.getElementById('page-intro').innerText = getVal(/intro:\s*\|\r?\n\s*(.*)/) || '';
                 
-                if(bgMatch) {
-                    let bgColor = bgMatch[1].trim();
-                    if (bgColor.startsWith('bg-[')) bgColor = bgColor.replace('bg-[', '').replace(']', '');
-                    document.getElementById('site-header').style.backgroundColor = bgColor;
+                const bgStr = getVal(/background:\s*(.*)/);
+                if (bgStr) {
+                    // Converts 'bg-[#6d94c7]' or '#6d94c7' into a valid CSS color
+                    const themeColor = bgStr.replace(/^bg-\[?|\]?$/g, '');
+                    document.documentElement.style.setProperty('--theme-color', themeColor);
                 }
-                
-                markdownContent = text.replace(frontmatterRegex, '').trim();
+                mdContent = text.replace(match[0], '').trim();
             }
 
-            markdownContent = markdownContent.replace(/\^([^\^]+)\^/g, '<sup>$1</sup>');
-
-            const rawHtml = marked.parse(markdownContent);
+            // 2. Parse Markdown
+            mdContent = mdContent.replace(/\^([^\^]+)\^/g, '<sup>$1</sup>');
             const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = rawHtml;
-            
-            const mainContainer = document.getElementById('main-container');
-            let currentGrid = null;
-            let currentCardBody = null;
+            tempDiv.innerHTML = marked.parse(mdContent);
+
+            // 3. Build Layout
+            let grid = null, cardBody = null;
 
             Array.from(tempDiv.children).forEach(node => {
-                const classRegex = /\{\s*((?:\.[a-zA-Z0-9_-]+\s*)+)\}/;
-
                 if (node.tagName === 'H2') {
-                    let headerText = node.textContent;
-                    let gridClasses = ['grid-container'];
-
-                    const classMatch = headerText.match(classRegex);
-                    if (classMatch) {
-                        const classes = classMatch[1].split('.').map(c => c.trim()).filter(Boolean);
-                        gridClasses.push(...classes);
-                        headerText = headerText.replace(classMatch[0], '').trim();
-                    }
-
-                    const sectionTitle = document.createElement('h2');
-                    sectionTitle.className = 'section-title';
-                    sectionTitle.textContent = headerText;
+                    const { clean, classes } = extractClasses(node.textContent);
+                    const title = Object.assign(document.createElement('h2'), {
+                        className: 'section-title', textContent: clean, id: toId(clean)
+                    });
                     
-                    // Manually assign ID to allow anchor links to jump here
-                    sectionTitle.id = generateId(headerText); 
-                    
-                    mainContainer.appendChild(sectionTitle);
-                    
-                    currentGrid = document.createElement('div');
-                    currentGrid.className = gridClasses.join(' ');
-                    mainContainer.appendChild(currentGrid);
+                    grid = Object.assign(document.createElement('div'), { className: ['grid-container', ...classes].join(' ') });
+                    mainContainer.append(title, grid);
                 } 
                 else if (node.tagName === 'H3') {
-                    if (!currentGrid) {
-                        currentGrid = document.createElement('div');
-                        currentGrid.className = 'grid-container';
-                        mainContainer.appendChild(currentGrid);
-                    }
-
-                    let headerText = node.textContent;
-                    const currentCard = document.createElement('div');
-                    currentCard.className = 'cheat-card';
-
-                    const classMatch = headerText.match(classRegex);
-                    if (classMatch) {
-                        const classes = classMatch[1].split('.').map(c => c.trim()).filter(Boolean);
-                        currentCard.classList.add(...classes);
-                        headerText = headerText.replace(classMatch[0], '').trim();
-                    }
-
-                    // Manually assign ID to the card
-                    currentCard.id = generateId(headerText); 
-
-                    const cardHeader = document.createElement('div');
-                    cardHeader.className = 'cheat-card-header';
-                    cardHeader.textContent = headerText;
-                    currentCard.appendChild(cardHeader);
-
-                    currentCardBody = document.createElement('div');
-                    currentCardBody.className = 'cheat-card-body';
-                    currentCard.appendChild(currentCardBody);
-
-                    currentGrid.appendChild(currentCard);
+                    if (!grid) mainContainer.appendChild(grid = Object.assign(document.createElement('div'), { className: 'grid-container' }));
+                    
+                    const { clean, classes } = extractClasses(node.textContent);
+                    const card = Object.assign(document.createElement('div'), { className: ['cheat-card', ...classes].join(' '), id: toId(clean) });
+                    
+                    card.appendChild(Object.assign(document.createElement('div'), { className: 'cheat-card-header', textContent: clean }));
+                    card.appendChild(cardBody = Object.assign(document.createElement('div'), { className: 'cheat-card-body' }));
+                    grid.appendChild(card);
                 } 
-                else {
-                    if (currentCardBody) {
-                        const blockAttrRegex = /^\{\s*((?:\.[a-zA-Z0-9_-]+\s*)+)\}$/;
-                        if (node.tagName === 'P' && blockAttrRegex.test(node.textContent.trim())) {
-                            const classMatch = node.textContent.trim().match(blockAttrRegex);
-                            const classes = classMatch[1].split('.').map(c => c.trim()).filter(Boolean);
-                            if (currentCardBody.lastElementChild) {
-                                currentCardBody.lastElementChild.classList.add(...classes);
-                            }
-                            return; 
-                        }
+                else if (cardBody) {
+                    // Handle standalone class blocks attached to previous elements
+                    const attrMatch = node.textContent.trim().match(/^\{\s*((?:\.[a-zA-Z0-9_-]+\s*)+)\}$/);
+                    if (node.tagName === 'P' && attrMatch && cardBody.lastElementChild) {
+                        cardBody.lastElementChild.classList.add(...attrMatch[1].split('.').map(c => c.trim()).filter(Boolean));
+                        return;
+                    }
 
-                        const inlineMatch = node.innerHTML.match(classRegex);
-                        if (inlineMatch) {
-                            const classes = inlineMatch[1].split('.').map(c => c.trim()).filter(Boolean);
-                            node.classList.add(...classes);
-                            node.innerHTML = node.innerHTML.replace(inlineMatch[0], '').trim();
-                            if (node.innerHTML === '') return; 
-                        }
+                    // Handle inline classes
+                    const { clean, classes, matched } = extractClasses(node.innerHTML);
+                    if (matched) {
+                        node.classList.add(...classes);
+                        node.innerHTML = clean;
+                        if (!node.innerHTML) return;
+                    }
 
-                        if (node.tagName === 'TABLE') {
-                            const tableWrapper = document.createElement('div');
-                            tableWrapper.className = 'table-wrapper';
-                            tableWrapper.appendChild(node.cloneNode(true));
-                            currentCardBody.appendChild(tableWrapper);
-                        } 
-                        else if (node.tagName === 'PRE') {
-                            const preWrapper = document.createElement('div');
-                            preWrapper.className = 'code-wrapper';
-                            
-                            const copyBtn = document.createElement('button');
-                            copyBtn.className = 'copy-btn';
-                            copyBtn.innerText = 'Copy';
-                            
-                            copyBtn.addEventListener('click', () => {
-                                navigator.clipboard.writeText(node.innerText).then(() => {
-                                    copyBtn.innerText = 'Copied!';
-                                    copyBtn.classList.add('copied');
-                                    setTimeout(() => {
-                                        copyBtn.innerText = 'Copy';
-                                        copyBtn.classList.remove('copied');
-                                    }, 2000);
-                                });
-                            });
+                    // Handle Special Blocks (Tables, Code)
+                    if (node.tagName === 'TABLE') {
+                        const wrap = Object.assign(document.createElement('div'), { className: 'table-wrapper' });
+                        wrap.appendChild(node);
+                        cardBody.appendChild(wrap);
+                    } 
+                    else if (node.tagName === 'PRE') {
+                        const wrap = Object.assign(document.createElement('div'), { className: 'code-wrapper' });
+                        const btn = Object.assign(document.createElement('button'), { className: 'copy-btn', textContent: 'Copy' });
+                        
+                        btn.onclick = () => navigator.clipboard.writeText(node.innerText).then(() => {
+                            btn.textContent = 'Copied!'; btn.classList.add('copied');
+                            setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+                        });
 
-                            preWrapper.appendChild(copyBtn);
-                            preWrapper.appendChild(node.cloneNode(true));
-                            currentCardBody.appendChild(preWrapper);
-                        } 
-                        else {
-                            currentCardBody.appendChild(node.cloneNode(true));
-                        }
+                        wrap.append(btn, node);
+                        cardBody.appendChild(wrap);
+                    } 
+                    else {
+                        cardBody.appendChild(node);
                     }
                 }
             });
 
             Prism.highlightAll();
 
-            // Intercept anchor clicks to provide smooth scrolling to the generated IDs
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
+            // 4. Smooth Scrolling & Anchor Highlights
+            document.querySelectorAll('a[href^="#"]').forEach(a => {
+                a.onclick = (e) => {
                     e.preventDefault();
-                    const targetId = this.getAttribute('href').substring(1);
-                    const targetElement = document.getElementById(targetId);
-                    
-                    if (targetElement) {
-                        targetElement.scrollIntoView({ behavior: 'smooth' });
-                        
-                        // Add a quick visual flash so the user knows where they landed
-                        targetElement.classList.add('highlight-target');
-                        setTimeout(() => targetElement.classList.remove('highlight-target'), 1200);
+                    const target = document.getElementById(a.getAttribute('href').substring(1));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                        target.classList.add('highlight-target');
+                        setTimeout(() => target.classList.remove('highlight-target'), 1200);
                     }
-                });
+                };
             });
-
         })
         .catch(console.error);
 });
